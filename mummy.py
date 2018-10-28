@@ -31,7 +31,8 @@ from io import StringIO
 from matplotlib import pyplot as plt
 from PIL import Image
 
-sys.path.append("..")
+# sys.path.append("..")
+sys.path.append("./object_detection")
 from object_detection.utils import ops as utils_ops
 
 if StrictVersion(tf.__version__) < StrictVersion('1.9.0'):
@@ -40,8 +41,8 @@ if StrictVersion(tf.__version__) < StrictVersion('1.9.0'):
 # ## Object detection imports
 # Here are the imports from the object detection module.
 
-from utils import label_map_util
-from utils import visualization_utils as vis_util
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as vis_util
 
 
 t_ = time.time()
@@ -54,40 +55,18 @@ t_ = time.time()
 # 
 # By default we use an "SSD with Mobilenet" model here. See the [detection model zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md) for a list of other models that can be run out-of-the-box with varying speeds and accuracies.
 
-# What model to download.
-MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
-MODEL_FILE = MODEL_NAME + '.tar.gz'
-DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
-
-# Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_FROZEN_GRAPH = MODEL_NAME + '/frozen_inference_graph.pb'
+# What model to download.の件は不要なので削除．
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join("object_detection",'data', 'mscoco_label_map.pbtxt')
 
 
-# ## Download Model
-# opener = urllib.request.URLopener()
-# opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
-# tar_file = tarfile.open(MODEL_FILE)
-# for file in tar_file.getmembers():
-#     file_name = os.path.basename(file.name)
-#     if 'frozen_inference_graph.pb' in file_name:
-#         tar_file.extract(file, os.getcwd())
-
-# # ## Load a (frozen) Tensorflow model into memory.
-# detection_graph = tf.Graph()
-# with detection_graph.as_default():
-#     od_graph_def = tf.GraphDef()
-#     with tf.gfile.GFile(PATH_TO_FROZEN_GRAPH, 'rb') as fid:
-#         serialized_graph = fid.read()
-#         od_graph_def.ParseFromString(serialized_graph)
-#         tf.import_graph_def(od_graph_def, name='')
+# ## Download Modelの件は不要なので削除．
 
 # モデルのダウンロード・読み込みをpickle読み込みに置換．
 detection_graph = tf.Graph()
 with detection_graph.as_default():
-    od_graph_def =  pickle.load(open("./od_graph_def.pkl", "rb"))
+    od_graph_def =  pickle.load(open("./object_detection/od_graph_def.pkl", "rb"))
     tf.import_graph_def(od_graph_def, name='')
 
 print("モデル読み終わり {:.2f} sec".format(time.time() - t_))
@@ -109,7 +88,7 @@ def load_image_into_numpy_array(image):
 # image1.jpg
 # image2.jpg
 # If you want to test the code with your images, just add path to the images to the TEST_IMAGE_PATHS.
-PATH_TO_TEST_IMAGES_DIR = 'test_images'
+PATH_TO_TEST_IMAGES_DIR = './object_detection/test_images'
 # TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 3) ]
 # TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, "kawada_car.jpg")]
 TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, "image1.jpg")]
@@ -170,8 +149,8 @@ def run_inference_for_single_image(image, graph):
 print("with手前 {:.2f} sec".format(time.time() - t_))
 
 # 画像表示ようフラグ．True なら画像を生成して表示する．
-# SHOW_PIC = False
-SHOW_PIC = True
+SHOW_PIC = False
+# SHOW_PIC = True
 
  # ここからobject detection
 with detection_graph.as_default():
