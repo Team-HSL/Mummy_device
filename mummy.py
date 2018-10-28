@@ -4,15 +4,10 @@ import time
 import pickle
 
 """シリアル通信のためのモジュール"""
-# import serial
-# from serial.tools import list_ports
-# import sys
-# import io
-# # from PIL import Image
-# from PIL import ImageDraw
-# from matplotlib import pyplot as plt
-# import numpy as np
-# import cv2
+import serial
+from serial.tools import list_ports
+import io
+import cv2
 """*************************"""
 
 ## ここから tensorflow object detection
@@ -143,26 +138,44 @@ def run_inference_for_single_image(image, graph):
 
 
 
-# cv2.namedWindow("HSL_mummy", cv2.WINDOW_AUTOSIZE)
-# cv2.imshow("Capture",cv2.imdecode(np.fromstring(cut_bynary_modified,dtype="uint8"), -1))
 
 print("with手前 {:.2f} sec".format(time.time() - t_))
 
 # 画像表示ようフラグ．True なら画像を生成して表示する．
-SHOW_PIC = False
-# SHOW_PIC = True
+# SHOW_PIC = False
+SHOW_PIC = True
+
+ports = serial.tools.list_ports.comports()
+ser = serial.Serial()
+ser.baudrate = 9600
+# ser.port = ports[1].device  # Winでの利用時
+ser.port = ports[4].device   # Macでの利用時
+ser.open()
 
  # ここからobject detection
-with detection_graph.as_default():
-    with tf.Session(graph=detection_graph) as sess:
-        for image_path in TEST_IMAGE_PATHS:
-            image = Image.open(image_path)
+
+# opencvのwindow生成
+if SHOW_PIC:
+    cv2.namedWindow("HSL_mummy", cv2.WINDOW_AUTOSIZE)
+
+while True:
+    barray  = ser.read(90000) #画像が欠けない中で最も小さい値を目指した．
+    b_list = barray.split(b'\xff\xd8')
+    cut_bytes = b_list[1].partition(b'\xff\xd9')
+    fig_bytes = bytes().join([b'\xff\xd8',cut_bytes[0],b'\xff\xd9'])
+
+    with detection_graph.as_default():
+        with tf.Session(graph=detection_graph) as sess:
+            # for image_path in TEST_IMAGE_PATHS:
+            image = Image.open(io.BytesIO(fig_bytes))
             # the array based representation of the image will be used later in order to prepare the
             # result image with boxes and labels on it.
             image_np = load_image_into_numpy_array(image)
             
             # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
             image_np_expanded = np.expand_dims(image_np, axis=0)
+
+            # モデルに入力するためのimage_tensorを構成．
             image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
             # Each box represents a part of the image where a particular object was detected.
             boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
@@ -171,7 +184,9 @@ with detection_graph.as_default():
             scores = detection_graph.get_tensor_by_name('detection_scores:0')
             classes = detection_graph.get_tensor_by_name('detection_classes:0')
             num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+            
             # Actual detection.
+            # ここで初めて画像をモデルに読み込む．
             (boxes, scores, classes, num_detections) = sess.run(
             [boxes, scores, classes, num_detections],
             feed_dict={image_tensor: image_np_expanded})
@@ -197,33 +212,14 @@ with detection_graph.as_default():
                     ,min_score_thresh=.5
                 )
 
-                plt.figure(figsize=IMAGE_SIZE, dpi=300) # dpiいじったら文字が読めるようになる
-                plt.imshow(image_np)
-                plt.axis("off")
+                # plt.figure(figsize=IMAGE_SIZE, dpi=300) # dpiいじったら文字が読めるようになる
+                # plt.imshow(image_np)
+                # plt.axis("off")
                 print("画像表示　後 {:.2f} sec".format(time.time() - t_))
-                plt.show()
+                # plt.show()
 
-            # cv2.imshow("HSL_mummy",image_np)
-            # cv2.waitKey(33)
-
+                # 描画
+                cv2.imshow("HSL_mummy",cv2.imdecode(np.fromstring(fig_bytes,dtype="uint8"), -1))
+                cv2.waitKey(33)
 ## ここまでtensorflowの設定
-
-# ports = serial.tools.list_ports.comports()
-# ser = serial.Serial()
-# ser.baudrate = 9600
-# print(ports)
-# ser.port = ports[1].device
-# ser.open()
-
-# cv2.namedWindow("Capture", cv2.WINDOW_AUTOSIZE)
-# while True:
-#     barray  = ser.read(150000)
-#     b_list = barray.split(b'\xff\xd8')
-#     cut_bynary = b_list[1].partition(b'\xff\xd9')
-#     cut_bynary_modified = bytes().join([b'\xff\xd8',cut_bynary[0],b'\xff\xd9'])
-
-   
-
-#     cv2.imshow("Capture",cv2.imdecode(np.fromstring(cut_bynary_modified,dtype="uint8"), -1))
-#     cv2.waitKey(33)
-# ser.close()
+ser.close()
