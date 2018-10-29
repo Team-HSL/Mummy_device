@@ -157,6 +157,7 @@ ser.open()
 # opencvのwindow生成
 if SHOW_PIC:
     cv2.namedWindow("HSL_mummy", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("raw_pic", cv2.WINDOW_AUTOSIZE)
 
 while True:
     barray  = ser.read(90000) #画像が欠けない中で最も小さい値を目指した．
@@ -174,7 +175,8 @@ while True:
             
             # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
             image_np_expanded = np.expand_dims(image_np, axis=0)
-
+            # plt.imshow(image_np_expanded)
+            # plt.show()
             # モデルに入力するためのimage_tensorを構成．
             image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
             # Each box represents a part of the image where a particular object was detected.
@@ -211,7 +213,8 @@ while True:
                     ,max_boxes_to_draw=9
                     ,min_score_thresh=.5
                 )
-
+                # plt.imshow(image_np)
+                # plt.show()
                 # plt.figure(figsize=IMAGE_SIZE, dpi=300) # dpiいじったら文字が読めるようになる
                 # plt.imshow(image_np)
                 # plt.axis("off")
@@ -219,7 +222,9 @@ while True:
                 # plt.show()
 
                 # 描画
-                cv2.imshow("HSL_mummy",cv2.imdecode(np.fromstring(fig_bytes,dtype="uint8"), -1))
+                cv2.imshow("raw_pic",cv2.imdecode(np.fromstring(fig_bytes,dtype="uint8"), -1))
+                cv2.imshow("HSL_mummy",image_np)
+                
                 cv2.waitKey(33)
 ## ここまでtensorflowの設定
 ser.close()
